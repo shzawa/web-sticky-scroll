@@ -8,7 +8,7 @@ export default function App() {
   };
 
   return (
-    <div className="p-6 max-w-md mx-auto">
+    <div className="p-8 max-w-xl mx-auto w-[500px]">
       <h1 className="text-2xl font-bold mb-4">Notion Scroll Sticky</h1>
 
       <div className="mb-6">
