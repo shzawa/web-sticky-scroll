@@ -75,34 +75,63 @@ export default defineContentScript({
     container.className = "notion-sticky-scroll-container";
     document.body.appendChild(container);
 
+    // 最後に表示された見出し要素を保持する変数
+    let lastVisibleHeadings: Element[] = [];
+    let hideTimeout: number | null = null;
+
     // 見出し要素を監視する関数
     const updateStickyScroll = () => {
       // 見出し要素を取得
       const headings = Array.from(document.querySelectorAll("h1, h2, h3, h4, h5, h6"));
 
       if (headings.length === 0) {
-        container.classList.remove("visible");
         return;
       }
 
-      // 現在表示されている見出しを特定
+      // 現在表示されている見出しを特定（検出範囲を広げる）
       const visibleHeadings = headings.filter(heading => {
         const rect = heading.getBoundingClientRect();
-        return rect.top <= 200 && rect.bottom > 0;
+        // 画面上部から300px以内、または画面内（下部）に見出しが入っている場合に検出
+        return rect.top <= 300 && rect.bottom > -100;
       });
 
-      if (visibleHeadings.length === 0) {
+      // 表示する見出し要素を決定
+      let headingsToShow = visibleHeadings;
+
+      if (visibleHeadings.length > 0) {
+        // 見出しが見つかった場合、最後に表示された見出しを更新
+        lastVisibleHeadings = visibleHeadings;
+
+        // タイムアウトがあれば解除
+        if (hideTimeout !== null) {
+          window.clearTimeout(hideTimeout);
+          hideTimeout = null;
+        }
+
+        container.classList.add("visible");
+      } else if (lastVisibleHeadings.length > 0) {
+        // 見出しが見つからない場合でも、最後に表示された見出しを使用
+        headingsToShow = lastVisibleHeadings;
+
+        // 一定時間後に非表示にするタイマーをセット（既存のタイマーがなければ）
+        if (hideTimeout === null) {
+          hideTimeout = window.setTimeout(() => {
+            // 3秒後に非表示にする（速いスクロールが止まった後も表示を維持）
+            container.classList.remove("visible");
+            hideTimeout = null;
+          }, 3000);
+        }
+      } else {
+        // 表示する見出しがない場合は非表示
         container.classList.remove("visible");
         return;
       }
-
-      container.classList.add("visible");
 
       // スティッキースクロールの内容を更新
       container.innerHTML = "";
 
       // 現在の見出しとその上位の見出しを表示
-      const currentHeading = visibleHeadings[0];
+      const currentHeading = headingsToShow[0];
       const currentLevel = parseInt(currentHeading.tagName.substring(1));
 
       // 現在の見出しより上にある見出しを取得
@@ -138,9 +167,31 @@ export default defineContentScript({
       });
     };
 
-    // スクロールイベントでスティッキースクロールを更新
+    // スクロールイベントのデバウンス処理用
+    let scrollTimeout: number | null = null;
+    let lastScrollTime = 0;
+    const scrollDebounceTime = 100; // ミリ秒
+
+    // スクロールイベントでスティッキースクロールを更新（デバウンス処理付き）
     window.addEventListener("scroll", () => {
-      requestAnimationFrame(updateStickyScroll);
+      const now = Date.now();
+
+      // 前回のスクロールから一定時間経過していない場合はタイムアウトをセット
+      if (now - lastScrollTime < scrollDebounceTime) {
+        if (scrollTimeout !== null) {
+          window.clearTimeout(scrollTimeout);
+        }
+
+        scrollTimeout = window.setTimeout(() => {
+          requestAnimationFrame(updateStickyScroll);
+          scrollTimeout = null;
+        }, scrollDebounceTime);
+      } else {
+        // 一定時間経過している場合は即時実行
+        requestAnimationFrame(updateStickyScroll);
+      }
+
+      lastScrollTime = now;
     }, { passive: true });
 
     // ページ内容の変更を監視

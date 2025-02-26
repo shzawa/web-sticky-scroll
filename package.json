@@ -23,6 +23,7 @@
     "tailwind-merge": "^3.0.2"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.9",
     "@types/chrome": "^0.0.280",
     "@types/node": "^22.13.5",
     "@types/react": "^19.0.1",
