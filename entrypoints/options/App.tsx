@@ -76,6 +76,8 @@ export default function App() {
     <div className="container mx-auto p-4 max-w-2xl">
       <h1 className="text-2xl font-bold mb-6">Notion Scroll Sticky 設定</h1>
 
+      {/* 保存メッセージは各ボタンの横に表示するため、ここでは表示しない */}
+
       <div className="mb-6">
         <h2 className="text-xl font-semibold mb-2">最大表示行数</h2>
         <p className="text-sm text-gray-600 mb-4">
@@ -122,34 +124,22 @@ export default function App() {
           />
         </div>
 
-        <button
-          onClick={saveBulkPatterns}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
-        >
-          URLパターンを保存
-        </button>
-
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold mb-2">現在の登録パターン</h3>
-          {urlPatterns.length > 0 ? (
-            <ul className="space-y-2">
-              {urlPatterns.map((pattern) => (
-                <li key={pattern.id} className="p-2 bg-secondary rounded-md">
-                  <span>{pattern.pattern}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-gray-500">URLパターンが設定されていません。</p>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={saveBulkPatterns}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
+          >
+            URLパターンを保存
+          </button>
+          {status && (
+            <div className="text-green-600 font-medium ml-4">
+              {status}
+            </div>
           )}
         </div>
-      </div>
 
-      {status && (
-        <div className="mt-4 p-2 bg-green-100 text-green-800 rounded-md">
-          {status}
-        </div>
-      )}
+        {/* 「現在の登録パターン」欄は削除 - テキストエリアの値が永続化されているため不要 */}
+      </div>
     </div>
   );
 }
